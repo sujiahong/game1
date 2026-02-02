@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>动物园大亨：H5最终版</title>
+    <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+    <style>
+        /* --- 1. 基础设定 --- */
+        body {
+            margin: 0; background-color: #2c3e50;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; font-family: "Microsoft YaHei", sans-serif;
+            overflow: hidden; flex-direction: column; user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #game-container {
+            width: 100%; height: 100%;
+            background-color: #fff8ee;
+            position: relative; overflow: hidden; display: flex; flex-direction: column;
+        }
+
+        @media (min-width: 450px) { 
+            #game-container { 
+                width: 414px; height: 90vh; max-height: 896px; 
+                border-radius: 30px; border: 10px solid #1e272e; 
+                box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            } 
+        }
+
+        .btn {
+            padding: 8px 16px; border: none; border-radius: 20px;
+            cursor: pointer; font-weight: bold; color: white;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2); transition: all 0.1s;
+            font-size: 14px; display: flex; align-items: center; gap: 5px;
+            pointer-events: auto;
+        }
+        .btn:active { transform: translateY(4px); box-shadow: none; }
+        .btn-blue { background: #3498db; } .btn-green { background: #2ecc71; } .btn-orange { background: #f39c12; }
+
+        /* --- 头部 --- */
+        #game-header {
+            height: 70px; flex-shrink: 0; background: white;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); z-index: 20; position: relative;
+        }
+        .header-left { display: flex; flex-direction: column; gap: 5px; width: 80px; }
+        .info-pill { background-color: #f1c40f; color: #946d04; padding: 2px 8px; border-radius: 20px; font-weight: 800; font-size: 12px; width: fit-content; position: relative;}
+        
+        .header-center { flex: 1; display: flex; flex-direction: column; align-items: center; margin: 0 5px; }
+        .level-text { font-size: 12px; font-weight: bold; color: #666; margin-bottom: 4px; }
+        
+        #temp-dock {
+            height: 40px; width: 100%; max-width: 160px;
+            background: #eee; border-radius: 8px; border: 2px dashed #bbb;
+            display: flex; justify-content: center; align-items: center; gap: 5px;
+            overflow: hidden; padding: 0 5px; box-sizing: border-box; position: relative;
+        }
+        #temp-dock::after { content: '本关战利品'; position: absolute; font-size: 10px; color: #aaa; pointer-events: none; }
+        #temp-dock.has-items::after { display: none; }
+        .mini-reward { width: 30px; height: 30px; object-fit: contain; animation: bounceIn 0.5s; z-index: 2; }
+        @keyframes bounceIn { 0% { transform: scale(0); } 60% { transform: scale(1.2); } 100% { transform: scale(1); } }
+
+        /* 地图与卡槽 */
+        #map-area { flex: 1; position: relative; overflow: hidden; background-color: #f0f2f5; }
+        #dock-area {
+            height: 120px; flex-shrink: 0; background-color: #5d4037; border-top: 4px solid #3e2723;
+            display: flex; justify-content: center; align-items: center; padding: 0 10px; z-index: 30; gap: 8px;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.3);
+        }
+        .tile {
+            width: 48px; height: 54px; position: absolute; background-color: #dcb692;
+            border: 1px solid #c49c7a; border-bottom: 6px solid #a68160; border-radius: 6px;
+            display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.2s; 
+            box-shadow: 3px 3px 8px rgba(0,0,0,0.15); font-size: 24px;
+        }
+        .tile::after { content: ''; position: absolute; width: 14px; height: 100%; background-color: var(--tape-color); border-left: 1px solid rgba(255,255,255,0.3); }
+        .tile.disabled { filter: brightness(0.5); background-color: #999; pointer-events: none; }
+        .tile.in-dock { position: relative; transform: scale(1); margin: 0; left: auto !important; top: auto !important; border-bottom-width: 4px; }
+
+        /* --- 特效 --- */
+        .reward-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 5000;
+            display: flex; justify-content: center; align-items: center;
+            flex-direction: column; animation: fadeIn 0.3s forwards;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .poke-ball {
+            width: 120px; height: 120px;
+            background: linear-gradient(to bottom, #f53b3b 48%, #333 48%, #333 52%, #fff 52%);
+            border: 6px solid #333; border-radius: 50%;
+            position: relative; box-shadow: 0 0 30px rgba(255,255,255,0.2);
+            animation: ballShake 1.2s ease-in-out infinite;
+        }
+        .poke-ball::after {
+            content: ''; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); width: 30px; height: 30px; background: #fff;
+            border: 5px solid #333; border-radius: 50%; box-shadow: inset 0 0 5px rgba(0,0,0,0.3);
+        }
+        @keyframes ballShake {
+            0%, 75%, 100% { transform: rotate(0); }
+            15% { transform: rotate(-15deg) translate(-5px, 0); }
+            30% { transform: rotate(15deg) translate(5px, 0); }
+            45% { transform: rotate(-10deg); }
+            60% { transform: rotate(10deg); }
+        }
+        .open-flash {
+            position: absolute; width: 10px; height: 10px; background: white; border-radius: 50%;
+            box-shadow: 0 0 50px 20px white; animation: flashExpand 0.5s ease-out forwards; pointer-events: none;
+        }
+        @keyframes flashExpand { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(30); opacity: 0; } }
+
+        .reward-content {
+            display: none; flex-direction: column; align-items: center;
+            animation: popUp 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+        .reward-content img { width: 160px; height: 160px; filter: drop-shadow(0 0 20px rgba(255,255,255,0.6)); }
+        .reward-content h2 {
+            color: #fff; font-size: 28px; margin-top: 20px; font-family: 'Patrick Hand', cursive;
+            background: #e67e22; padding: 5px 20px; border-radius: 20px; border: 3px solid #fff;
+        }
+        
+        .fly-coin {
+            position: fixed; width: 50px; height: 50px; 
+            background: #f1c40f; border: 3px solid #f39c12; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            color: #b7791f; font-weight: bold; font-size: 32px; z-index: 6000;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); pointer-events: none;
+            transition: all 0.8s ease-in-out;
+        }
+        .fly-coin::after { content:'$'; }
+        
+        /* 游客小金币特效 (比大金币小一点) */
+        .fly-coin-mini {
+            position: fixed; width: 24px; height: 24px;
+            background: #f1c40f; border: 1px solid #f39c12; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            color: #b7791f; font-weight: bold; font-size: 14px; z-index: 6000;
+            pointer-events: none; transition: all 0.6s ease-in-out;
+        }
+        .fly-coin-mini::after { content:'$'; }
+
+        .fly-animal {
+            position: fixed; width: 100px; height: 100px; object-fit: contain;
+            z-index: 6000; pointer-events: none; transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3));
+        }
+
+        /* --- 动物园相关 --- */
+        #zoo-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff; z-index: 100; display: none; flex-direction: column;
+            font-family: 'Patrick Hand', cursive; color: #333;
+        }
+        #zoo-scroller {
+            flex: 1; display: flex; overflow-x: auto; overflow-y: hidden;
+            scroll-snap-type: x mandatory; scroll-behavior: smooth;
+            background: #fff; scrollbar-width: none; -ms-overflow-style: none;
+            cursor: grab;
+        }
+        #zoo-scroller:active { cursor: grabbing; scroll-snap-type: none; }
+        #zoo-scroller::-webkit-scrollbar { display: none; }
+        
+        .zoo-page { width: 100%; height: 100%; flex-shrink: 0; scroll-snap-align: start; position: relative; overflow: hidden; }
+
+        /* Gate */
+        #page-gate {
+            background-color: #f0e6d2;
+            background-image: linear-gradient(#e6dbc5 2px, transparent 2px), linear-gradient(90deg, #e6dbc5 2px, transparent 2px);
+            background-size: 40px 40px;
+        }
+        .gate-arch {
+            position: absolute; top: 15%; left: 50%; transform: translateX(-50%);
+            width: 260px; height: 200px;
+            border-top: 15px solid #5d4037; border-left: 15px solid #5d4037; border-right: 15px solid #5d4037;
+            border-radius: 20px 20px 0 0; display: flex; justify-content: center;
+        }
+        .gate-sign {
+            margin-top: -30px; background: #e74c3c; color: white;
+            padding: 5px 20px; border-radius: 5px; border: 3px solid #c0392b;
+            font-size: 32px; font-weight: bold; transform: rotate(-2deg); box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+        }
+        .ticket-booth { position: absolute; bottom: 120px; left: 30px; font-size: 80px; filter: drop-shadow(5px 5px 0 rgba(0,0,0,0.1)); }
+        
+        .slide-btn {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 44px; height: 44px; line-height: 44px; text-align: center;
+            font-size: 24px; color: #fff; cursor: pointer;
+            background: rgba(0,0,0,0.2); border-radius: 50%;
+            backdrop-filter: blur(2px); z-index: 500; pointer-events: auto;
+            border: 2px solid rgba(255,255,255,0.4);
+        }
+        .slide-right { right: 10px; } .slide-left { left: 10px; }
+
+        /* Habitat */
+        #page-habitat { background-color: #a8e6cf; box-sizing: border-box; display: flex; flex-direction: column; }
+        #habitat-animal-area {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 400px;
+            background-color: #b8e994; overflow: hidden; border-bottom: 12px solid #8d6e63;
+        }
+        #habitat-visitor-area {
+            position: absolute; bottom: 0; left: 0; right: 0; height: 400px;
+            background-color: #f5f6fa;
+            background-image: radial-gradient(#dcdde1 15%, transparent 16%), radial-gradient(#dcdde1 15%, transparent 16%);
+            background-size: 30px 30px; background-position: 0 0, 15px 15px;
+            overflow: hidden; z-index: 50;
+        }
+        .area-sign {
+            position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+            background: #34495e; color: #fff; padding: 5px 15px; border-radius: 5px;
+            font-size: 14px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 60;
+        }
+        
+        /* 游客样式更新：增加可点击状态 */
+        .visitor {
+            position: absolute; font-size: 36px;
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.1));
+            animation: wander 10s infinite alternate ease-in-out;
+            cursor: pointer; user-select: none;
+            transition: transform 0.1s;
+        }
+        .visitor:active { transform: scale(0.9); }
+        /* 游客头顶的金币气泡 */
+        .visitor-bubble {
+            position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+            font-size: 16px; animation: bubbleFloat 1s infinite alternate; pointer-events: none;
+        }
+        @keyframes bubbleFloat { 0% { transform: translateX(-50%) translateY(0); } 100% { transform: translateX(-50%) translateY(-5px); } }
+
+        .zoo-ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 200;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .zoo-top-bar {
+            height: 70px; background: rgba(255,255,255,0.8);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 15px; pointer-events: auto; backdrop-filter: blur(5px); border-bottom: 2px dashed #ccc;
+        }
+        .zoo-bottom-bar { padding: 15px; display: flex; justify-content: flex-end; pointer-events: auto; }
+        .zoo-btn {
+            padding: 5px 15px; border: 2px solid #000;
+            border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+            font-family: 'Patrick Hand', cursive; font-size: 18px; 
+            cursor: pointer; background: #fff; box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+        }
+        .zoo-btn:active { transform: scale(0.95); box-shadow: none; }
+
+        .zoo-animal-wrapper { position: absolute; width: 70px; height: 70px; z-index: 60; }
+        .zoo-animal-inner {
+            width: 100%; height: 100%; background-size: contain; background-repeat: no-repeat; background-position: center bottom;
+            animation: jumpAnim 1s infinite ease-in-out; cursor: pointer; filter: drop-shadow(1px 1px 0 #000);
+        }
+        @keyframes jumpAnim { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .flip { transform: scaleX(-1); } .decor-item { position: absolute; pointer-events: none; z-index: 40; opacity: 0.9; }
+
+        #shop-modal {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 60%;
+            background: #fff; border-top: 4px solid #000; border-radius: 20px 20px 0 0; z-index: 300;
+            transform: translateY(110%); transition: transform 0.3s;
+            display: flex; flex-direction: column; font-family: 'Patrick Hand', cursive;
+        }
+        #shop-modal.open { transform: translateY(0); }
+        .shop-content { flex: 1; overflow-y: auto; padding: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .shop-item { border: 2px solid #000; border-radius: 10px; padding: 10px; text-align: center;}
+
+        #result-modal {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); display: none;
+            flex-direction: column; justify-content: center; align-items: center; color: #fff; z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        
+        <div id="game-header">
+            <div class="header-left">
+                <div class="info-pill" id="wallet-icon">💰 <span id="coin-count">0</span></div>
+            </div>
+            
+            <div class="header-center">
+                <div class="level-text">第 <span id="level-num">1</span> 关</div>
+                <div id="temp-dock"></div>
+            </div>
+
+            <button class="btn btn-blue" onclick="openZoo()">🦁 去园区</button>
+        </div>
+
+        <div id="map-area"></div>
+        <div id="dock-area"></div>
+
+        <div id="result-modal">
+            <h1 id="result-title" style="font-size:32px; margin-bottom:10px;">通关!</h1>
+            <div id="result-rewards-display" style="display:flex; gap:10px; margin-bottom:20px; min-height:60px; align-items:center; justify-content:center;"></div>
+            <div style="display:flex; gap:15px; margin-top:20px;">
+                <button class="btn btn-orange" onclick="openZoo()">去装修</button>
+                <button class="btn btn-green" onclick="initGame()">下一关</button>
+            </div>
+        </div>
+
+        <!-- 动物园界面 -->
+        <div id="zoo-screen">
+            <div id="zoo-scroller">
+                <!-- 1. 大门 -->
+                <div id="page-gate" class="zoo-page">
+                    <div class="gate-arch"><div class="gate-sign">MY ZOO</div></div>
+                    <div class="ticket-booth">🎪</div>
+                    <div id="gate-queue"></div>
+                    <div class="slide-btn slide-right" onclick="scrollToId('page-habitat')">➡</div>
+                </div>
+                
+                <!-- 2. 生活区 -->
+                <div id="page-habitat" class="zoo-page">
+                    <div id="habitat-animal-area"></div>
+                    <div id="habitat-visitor-area">
+                        <div class="area-sign">游客观赏区</div>
+                        <div id="visitor-container"></div>
+                    </div>
+                    <div class="slide-btn slide-left" onclick="scrollToId('page-gate')">⬅</div>
+                </div>
+            </div>
+            
+            <div class="zoo-ui-layer">
+                <div class="zoo-top-bar">
+                    <div style="font-size:20px; color:#d35400;">🟡 <span id="zoo-coin-count">0</span></div>
+                    <button class="zoo-btn" style="background:#a8e6cf;" onclick="closeZoo()">❌ 关闭</button>
+                </div>
+                <div class="zoo-bottom-bar">
+                    <button class="zoo-btn" style="background:#ffd3b6;" onclick="toggleShop()">🏪 杂货铺</button>
+                </div>
+            </div>
+            <div id="shop-modal">
+                <div style="padding:15px; border-bottom:2px dashed #000; display:flex; justify-content:space-between;">
+                    <span style="font-size:24px; font-weight:bold;">装修杂货铺</span>
+                    <button class="zoo-btn" style="background:#ffaaa5;" onclick="toggleShop()">X</button>
+                </div>
+                <div class="shop-content" id="shop-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = "https://openmoji.org/data/color/svg/";
+        const ANIMALS = [
+            { id: 'fox', name:'火狐狸', url: BASE_URL + '1F98A.svg' },
+            { id: 'wolf', name:'灰太狼', url: BASE_URL + '1F43A.svg' },
+            { id: 'dog', name:'汪汪队', url: BASE_URL + '1F415.svg' },
+            { id: 'cat', name:'喵星人', url: BASE_URL + '1F408.svg' },
+            { id: 'pig', name:'小猪猪', url: BASE_URL + '1F416.svg' },
+            { id: 'lion', name:'辛巴', url: BASE_URL + '1F981.svg' },
+            { id: 'tiger', name:'老虎', url: BASE_URL + '1F405.svg' },
+            { id: 'panda', name:'团子', url: BASE_URL + '1F43C.svg' },
+            { id: 'koala', name:'考拉', url: BASE_URL + '1F428.svg' }
+        ];
+
+        const SHOP_ITEMS = [
+            { id: 'rock', name: '石头', cost: 20, type: 'deco', icon: '🪨', size: 30 },
+            { id: 'grass', name: '草丛', cost: 10, type: 'deco', icon: '🌿', size: 30 },
+            { id: 'flower', name: '小花', cost: 15, type: 'deco', icon: '🌼', size: 25 },
+            { id: 'trough', name: '水槽', cost: 50, type: 'deco', icon: '🪵', size: 50 },
+            { id: 'tree', name: '小树', cost: 60, type: 'deco', icon: '🌳', size: 60 },
+            { id: 'lamp', name: '路灯', cost: 80, type: 'deco', icon: '🏮', size: 50 },
+        ];
+
+        const TAPE_COLORS = ['#ff4757', '#1e90ff', '#2ed573', '#ffa502', '#a55eea', '#00d2d3'];
+        
+        let gameState = { coins: 0, animals: [], purchasedItems: [], level: 1 };
+        let currentGame = { tiles: [], dock: [], active: false };
+        let tempRewards = []; 
+
+        const els = {
+            map: document.getElementById('map-area'),
+            dock: document.getElementById('dock-area'),
+            modal: document.getElementById('result-modal'),
+            modalTitle: document.getElementById('result-title'),
+            modalRewards: document.getElementById('result-rewards-display'),
+            coinLabels: [document.getElementById('coin-count'), document.getElementById('zoo-coin-count')],
+            levelLabel: document.getElementById('level-num'),
+            zooScreen: document.getElementById('zoo-screen'),
+            habitatAnimalArea: document.getElementById('habitat-animal-area'),
+            visitorContainer: document.getElementById('visitor-container'),
+            gateQueue: document.getElementById('gate-queue'),
+            shopModal: document.getElementById('shop-modal'),
+            shopList: document.getElementById('shop-list'),
+            scroller: document.getElementById('zoo-scroller'),
+            tempDock: document.getElementById('temp-dock'),
+            walletIcon: document.getElementById('wallet-icon') 
+        };
+
+        function init() { loadData(); updateUI(); initGame(); initSwipe(); }
+        function loadData() { const save = localStorage.getItem('zooGameSaveV9'); if(save) gameState = JSON.parse(save); }
+        function saveData() { localStorage.setItem('zooGameSaveV9', JSON.stringify(gameState)); updateUI(); }
+        function updateUI() { 
+            els.coinLabels.forEach(l => l.innerText = gameState.coins); 
+            els.levelLabel.innerText = gameState.level; 
+        }
+
+        // --- 滑动 ---
+        function initSwipe() {
+            const slider = els.scroller;
+            let isDown = false;
+            let startX;
+            let scrollLeft;
+            slider.addEventListener('mousedown', (e) => { isDown = true; slider.style.scrollSnapType = 'none'; startX = e.pageX - slider.offsetLeft; scrollLeft = slider.scrollLeft; });
+            slider.addEventListener('mouseleave', () => { isDown = false; slider.style.scrollSnapType = 'x mandatory'; });
+            slider.addEventListener('mouseup', () => { isDown = false; slider.style.scrollSnapType = 'x mandatory'; });
+            slider.addEventListener('mousemove', (e) => { if(!isDown) return; e.preventDefault(); const x = e.pageX - slider.offsetLeft; const walk = (x - startX) * 2; slider.scrollLeft = scrollLeft - walk; });
+        }
+
+        function initGame() {
+            els.modal.style.display = 'none'; 
+            els.map.innerHTML = ''; 
+            els.dock.innerHTML = '';
+            tempRewards = [];
+            els.tempDock.innerHTML = ''; 
+            els.tempDock.classList.remove('has-items');
+            currentGame = { tiles: [], dock: [], active: true };
+            let total = Math.min(18 + (gameState.level - 1) * 6, 90);
+            createLevel(total); checkCover();
+        }
+
+        function createLevel(total) {
+            let types = [];
+            for(let i=0; i<total/3; i++) { let t = Math.floor(Math.random()*TAPE_COLORS.length); types.push(t,t,t); }
+            types.sort(()=>Math.random()-0.5);
+            for(let i=0; i<total; i++) {
+                let div = document.createElement('div'); div.className = 'tile';
+                div.style.setProperty('--tape-color', TAPE_COLORS[types[i]]);
+                let x = 20 + Math.random()*280; let y = 20 + Math.random()*380;
+                if(els.map.clientWidth > 320) x = 20 + Math.random()*(els.map.clientWidth - 70);
+                div.style.left = x+'px'; div.style.top = y+'px'; div.style.zIndex = i; 
+                let tile = { id:i, el:div, type:types[i], x:x, y:y, z:i, inDock:false };
+                div.onpointerdown = (e) => { e.preventDefault(); onClickTile(tile); };
+                els.map.appendChild(div); currentGame.tiles.push(tile);
+            }
+        }
+
+        function checkCover() {
+            let mapTiles = currentGame.tiles.filter(t => !t.inDock);
+            mapTiles.forEach(bot => {
+                let covered = false;
+                for(let top of mapTiles) {
+                    if(top.z > bot.z && Math.abs(top.x - bot.x) < 44 && Math.abs(top.y - bot.y) < 48) { covered = true; break; }
+                }
+                if(covered) bot.el.classList.add('disabled'); else bot.el.classList.remove('disabled');
+            });
+        }
+
+        function onClickTile(t) {
+            if(!currentGame.active || t.inDock || t.el.classList.contains('disabled') || currentGame.dock.length >= 7) return;
+            t.inDock = true; currentGame.dock.push(t);
+            t.el.classList.remove('disabled'); t.el.classList.add('in-dock'); els.dock.appendChild(t.el); 
+            checkCover(); setTimeout(checkMatch, 150);
+        }
+
+        function checkMatch() {
+            let counts = {}; currentGame.dock.forEach(t => counts[t.type] = (counts[t.type]||0)+1);
+            let matchType = null; for(let k in counts) if(counts[k]>=3) matchType = parseInt(k);
+
+            if(matchType !== null) {
+                let list = currentGame.dock.filter(t => t.type === matchType).slice(0,3);
+                list.forEach(t => { t.el.style.transform='scale(0)'; setTimeout(()=>t.el.remove(), 250); });
+                let del = 0; currentGame.dock = currentGame.dock.filter(t => { if(t.type===matchType && del<3) {del++; return false;} return true; });
+                
+                if(Math.random() < 0.3) {
+                    let ani = ANIMALS[Math.floor(Math.random()*ANIMALS.length)];
+                    tempRewards.push(ani); 
+                    triggerReward(ani);    
+                } else {
+                    let rewardCoins = 20; 
+                    addCoins(rewardCoins);
+                    const dockRect = els.dock.getBoundingClientRect();
+                    createCoinExplosion(dockRect.left + dockRect.width / 2, dockRect.top + 20); 
+                }
+
+            } else if(currentGame.dock.length >= 7) {
+                currentGame.active = false; alert("槽位已满！"); initGame();
+            }
+
+            if(currentGame.tiles.filter(t=>!t.inDock).length===0 && currentGame.dock.length===0) {
+                currentGame.active = false;
+                if(tempRewards.length > 0) {
+                    gameState.animals.push(...tempRewards);
+                    els.modalTitle.innerHTML = "通关成功!";
+                    els.modalRewards.innerHTML = tempRewards.map(a => 
+                        `<div style="text-align:center"><img src="${a.url}" style="width:50px;"><div style="font-size:10px">${a.name}</div></div>`
+                    ).join('');
+                } else {
+                    els.modalTitle.innerText = "通关!";
+                    els.modalRewards.innerHTML = "<span style='color:#aaa'>本次未捕获动物</span>";
+                }
+                els.modal.style.display='flex'; gameState.level++; saveData();
+            }
+        }
+
+        function triggerReward(data) {
+            let overlay = document.createElement('div'); overlay.className = 'reward-overlay';
+            let ball = document.createElement('div'); ball.className = 'poke-ball';
+            let content = document.createElement('div'); content.className = 'reward-content';
+            content.innerHTML = `
+                <img src="${data.url}">
+                <h2>✨ 发现: ${data.name} ✨</h2>
+                <div style="font-size:14px; color:#fff; background:rgba(0,0,0,0.5); padding:4px 10px; border-radius:10px; margin-top:5px;">通关后获得</div>
+                <div style="font-size:14px; color:#ddd; margin-top:10px;">(点击继续)</div>
+            `;
+            overlay.appendChild(ball); overlay.appendChild(content); document.body.appendChild(overlay);
+            setTimeout(() => { ball.style.display = 'none'; let flash = document.createElement('div'); flash.className = 'open-flash'; overlay.appendChild(flash); content.style.display = 'flex'; }, 1200);
+            overlay.onclick = () => { if(content.style.display === 'flex') { overlay.style.transition = 'opacity 0.3s'; overlay.style.opacity = '0'; setTimeout(() => { overlay.remove(); flyAnimalToDock(data); }, 300); } };
+        }
+
+        function flyAnimalToDock(animal) {
+            let flyer = document.createElement('img');
+            flyer.src = animal.url;
+            flyer.className = 'fly-animal';
+            flyer.style.left = (window.innerWidth / 2 - 50) + 'px';
+            flyer.style.top = (window.innerHeight / 2 - 50) + 'px';
+            document.body.appendChild(flyer);
+
+            const dockRect = els.tempDock.getBoundingClientRect();
+            requestAnimationFrame(() => {
+                flyer.style.transform = 'scale(1.5)';
+                setTimeout(() => {
+                    flyer.style.left = (dockRect.left + dockRect.width / 2 - 15) + 'px';
+                    flyer.style.top = (dockRect.top + dockRect.height / 2 - 15) + 'px';
+                    flyer.style.width = '30px'; flyer.style.height = '30px'; flyer.style.transform = 'scale(1)';
+                }, 100);
+            });
+            setTimeout(() => { flyer.remove(); updateTempDock(animal); }, 900);
+        }
+
+        function createCoinExplosion(startX, startY) {
+            const rect = els.walletIcon.getBoundingClientRect(); 
+            const cx = startX || window.innerWidth / 2; const cy = startY || window.innerHeight / 2;
+            for(let i=0; i<8; i++) {
+                let coin = document.createElement('div'); coin.className = 'fly-coin';
+                coin.style.left = cx + 'px'; coin.style.top = cy + 'px'; document.body.appendChild(coin);
+                let randX = (Math.random()-0.5) * 120; let randY = (Math.random()-0.5) * 120 - 60; 
+                requestAnimationFrame(() => { coin.style.transform = `translate(${randX}px, ${randY}px)`; });
+                setTimeout(() => { coin.style.transition = 'all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)'; coin.style.transform = 'scale(0.5)'; coin.style.left = (rect.left + 15) + 'px'; coin.style.top = (rect.top + 10) + 'px'; coin.style.opacity = '0.5'; }, 100 + Math.random()*150);
+                setTimeout(() => { coin.remove(); }, 800);
+            }
+        }
+
+        // --- 游客点击掉金币 ---
+        function collectVisitorCoin(e, el) {
+            if(el.classList.contains('cooldown')) return; // 冷却中
+            
+            // 播放点击动画
+            el.style.transform = 'scale(1.2)';
+            setTimeout(()=>el.style.transform = 'scale(1)', 100);
+
+            // 加金币
+            addCoins(1);
+            
+            // 飞小金币
+            let coin = document.createElement('div'); coin.className = 'fly-coin-mini';
+            coin.style.left = e.clientX + 'px'; coin.style.top = e.clientY + 'px';
+            document.body.appendChild(coin);
+            
+            const rect = els.walletIcon.getBoundingClientRect();
+            setTimeout(() => {
+                coin.style.left = (rect.left + 10) + 'px';
+                coin.style.top = (rect.top + 10) + 'px';
+                coin.style.opacity = '0';
+            }, 50);
+            setTimeout(() => coin.remove(), 600);
+
+            // 进入冷却
+            el.classList.add('cooldown');
+            let bubble = el.querySelector('.visitor-bubble');
+            if(bubble) bubble.style.display = 'none';
+
+            // 5秒后恢复
+            setTimeout(() => {
+                el.classList.remove('cooldown');
+                if(bubble) bubble.style.display = 'block';
+            }, 5000);
+        }
+
+        function updateTempDock(animal) {
+            els.tempDock.classList.add('has-items');
+            let img = document.createElement('img'); img.src = animal.url; img.className = 'mini-reward'; els.tempDock.appendChild(img);
+        }
+
+        function addCoins(n) { gameState.coins+=n; updateUI(); saveData(); }
+
+        function openZoo() { els.zooScreen.style.display = 'flex'; renderGate(); renderHabitat(); els.scroller.scrollLeft = 0; els.shopModal.classList.remove('open'); }
+        function closeZoo() { els.zooScreen.style.display = 'none'; }
+        window.scrollToId = function(elementId) { const el = document.getElementById(elementId); if(el) el.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'start' }); }
+
+        function renderGate() {
+            els.gateQueue.innerHTML = '';
+            const tourists = ['🧑', '👧', '👦', '👩', '👴'];
+            for(let i=0; i<5; i++) { let t = document.createElement('div'); t.className = 'tourist'; t.innerText = tourists[Math.floor(Math.random()*tourists.length)]; els.gateQueue.appendChild(t); }
+        }
+
+        function renderHabitat() {
+            els.habitatAnimalArea.innerHTML = ''; els.visitorContainer.innerHTML = '';
+            if(gameState.purchasedItems.length === 0) { createDecor('🪨', '20%', '30%', 30); createDecor('🌿', '80%', '20%', 30); }
+            gameState.purchasedItems.forEach(id => { let item = SHOP_ITEMS.find(i=>i.id===id); if(item) createDecor(item.icon, (Math.random()*80+10)+'%', (Math.random()*80+10)+'%', item.size); });
+            gameState.animals.forEach(ani => {
+                let wrap = document.createElement('div'); wrap.className = 'zoo-animal-wrapper';
+                wrap.style.left=(Math.random()*80+5)+'%'; wrap.style.top=(Math.random()*80+5)+'%';
+                if(Math.random()>0.5) wrap.classList.add('flip');
+                let inner = document.createElement('div'); inner.className = 'zoo-animal-inner'; inner.style.backgroundImage = `url(${ani.url})`; inner.style.animationDuration = (0.8+Math.random())+'s';
+                wrap.appendChild(inner); els.habitatAnimalArea.appendChild(wrap);
+            });
+
+            const tourists = ['🧑', '👧', '👦', '👩', '👴', '👱‍♀️', '👲'];
+            for(let i=0; i<8; i++) {
+                let v = document.createElement('div'); v.className = 'visitor';
+                v.innerHTML = tourists[Math.floor(Math.random()*tourists.length)] + '<div class="visitor-bubble">💰</div>';
+                v.style.left = (Math.random()*80+10) + '%'; v.style.top = (Math.random()*280+50) + 'px'; 
+                v.style.animationDuration = (5+Math.random()*5)+'s';
+                if(Math.random()>0.5) v.classList.add('flip');
+                
+                // 绑定点击事件
+                v.onpointerdown = (e) => {
+                    e.stopPropagation(); // 防止拖动屏幕
+                    collectVisitorCoin(e, v);
+                };
+                
+                els.visitorContainer.appendChild(v);
+            }
+        }
+        
+        function createDecor(icon, x, y, size) { let el = document.createElement('div'); el.className='decor-item'; el.innerText=icon; el.style.left=x; el.style.top=y; el.style.fontSize=size+'px'; els.habitatAnimalArea.appendChild(el); }
+        function toggleShop() {
+            if(els.shopModal.classList.contains('open')) els.shopModal.classList.remove('open');
+            else {
+                els.shopList.innerHTML = '';
+                SHOP_ITEMS.forEach(item => {
+                    let div = document.createElement('div'); div.className = 'shop-item';
+                    div.innerHTML = `<div style="font-size:32px;">${item.icon}</div><div>${item.name}</div><div style="font-size:14px;">${item.cost}🟡</div><button class="zoo-btn" style="background:#a8e6cf; font-size:14px;" onclick="buyItem('${item.id}')">购买</button>`;
+                    els.shopList.appendChild(div);
+                });
+                els.shopModal.classList.add('open');
+            }
+        }
+        window.buyItem = function(id) {
+            let item = SHOP_ITEMS.find(i=>i.id===id);
+            if(gameState.coins>=item.cost) { gameState.coins-=item.cost; gameState.purchasedItems.push(id); saveData(); updateUI(); toggleShop(); renderHabitat(); window.scrollToId('page-habitat'); }
+        }
+
+        init();
+    </script>
+</body>
+</html>
