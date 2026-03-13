@@ -1,0 +1,258 @@
+
+openegg.png
+size: 761, 523
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+dd1
+  rotate: false
+  xy: 634, 17
+  size: 71, 71
+  orig: 77, 77
+  offset: 3, 3
+  index: -1
+j01/skeleton-animation_01
+  rotate: false
+  xy: 507, 126
+  size: 28, 95
+  orig: 29, 95
+  offset: 0, 0
+  index: -1
+j01/skeleton-animation_03
+  rotate: false
+  xy: 691, 218
+  size: 56, 88
+  orig: 57, 88
+  offset: 1, 0
+  index: -1
+j01/skeleton-animation_05
+  rotate: false
+  xy: 149, 11
+  size: 87, 45
+  orig: 87, 45
+  offset: 0, 0
+  index: -1
+j01/skeleton-animation_07
+  rotate: true
+  xy: 341, 17
+  size: 48, 81
+  orig: 48, 82
+  offset: 0, 1
+  index: -1
+j01/skeleton-animation_09
+  rotate: false
+  xy: 716, 136
+  size: 43, 80
+  orig: 43, 80
+  offset: 0, 0
+  index: -1
+j01/skeleton-animation_11
+  rotate: true
+  xy: 716, 67
+  size: 67, 42
+  orig: 67, 42
+  offset: 0, 0
+  index: -1
+j01/skeleton-animation_13
+  rotate: true
+  xy: 106, 2
+  size: 54, 41
+  orig: 54, 41
+  offset: 0, 0
+  index: -1
+j01/skeleton-animation_15
+  rotate: true
+  xy: 536, 50
+  size: 24, 58
+  orig: 24, 58
+  offset: 0, 0
+  index: -1
+j01/skeleton-animation_17
+  rotate: false
+  xy: 596, 32
+  size: 35, 42
+  orig: 36, 42
+  offset: 0, 0
+  index: -1
+j01/skeleton-animation_19
+  rotate: false
+  xy: 536, 28
+  size: 43, 20
+  orig: 43, 21
+  offset: 0, 1
+  index: -1
+j01/skeleton-animation_21
+  rotate: false
+  xy: 504, 36
+  size: 30, 29
+  orig: 30, 29
+  offset: 0, 0
+  index: -1
+j01/skeleton-animation_23
+  rotate: true
+  xy: 536, 11
+  size: 15, 34
+  orig: 15, 34
+  offset: 0, 0
+  index: -1
+j01/skeleton-animation_25
+  rotate: true
+  xy: 504, 20
+  size: 14, 30
+  orig: 14, 30
+  offset: 0, 0
+  index: -1
+j01/skeleton-animation_27
+  rotate: true
+  xy: 335, 2
+  size: 13, 24
+  orig: 13, 24
+  offset: 0, 0
+  index: -1
+j01/skeleton-animation_29
+  rotate: true
+  xy: 361, 4
+  size: 11, 18
+  orig: 11, 18
+  offset: 0, 0
+  index: -1
+js01/js-animation_01
+  rotate: true
+  xy: 238, 2
+  size: 27, 95
+  orig: 27, 95
+  offset: 0, 0
+  index: -1
+js01/js-animation_03
+  rotate: true
+  xy: 238, 31
+  size: 34, 101
+  orig: 34, 102
+  offset: 0, 0
+  index: -1
+js01/js-animation_05
+  rotate: true
+  xy: 2, 4
+  size: 52, 102
+  orig: 53, 102
+  offset: 0, 0
+  index: -1
+js01/js-animation_07
+  rotate: true
+  xy: 424, 9
+  size: 56, 78
+  orig: 56, 78
+  offset: 0, 0
+  index: -1
+js01/js-animation_09
+  rotate: true
+  xy: 707, 7
+  size: 58, 51
+  orig: 59, 51
+  offset: 0, 0
+  index: -1
+js01/js-animation_11
+  rotate: true
+  xy: 507, 69
+  size: 55, 27
+  orig: 55, 27
+  offset: 0, 0
+  index: -1
+js01/js-animation_13
+  rotate: true
+  xy: 691, 173
+  size: 43, 21
+  orig: 43, 21
+  offset: 0, 0
+  index: -1
+js01/js-animation_15
+  rotate: false
+  xy: 572, 3
+  size: 23, 23
+  orig: 23, 24
+  offset: 0, 0
+  index: -1
+js01/js-animation_17
+  rotate: false
+  xy: 749, 277
+  size: 10, 29
+  orig: 10, 29
+  offset: 0, 0
+  index: -1
+js01/js-animation_19
+  rotate: false
+  xy: 504, 3
+  size: 21, 15
+  orig: 21, 15
+  offset: 0, 0
+  index: -1
+js01/js-animation_21
+  rotate: false
+  xy: 597, 16
+  size: 19, 14
+  orig: 19, 14
+  offset: 0, 0
+  index: -1
+js01/js-animation_23
+  rotate: false
+  xy: 749, 256
+  size: 9, 19
+  orig: 9, 19
+  offset: 0, 0
+  index: -1
+pokeball1
+  rotate: false
+  xy: 237, 67
+  size: 133, 154
+  orig: 133, 154
+  offset: 0, 0
+  index: -1
+pokeball2
+  rotate: false
+  xy: 372, 67
+  size: 133, 154
+  orig: 133, 154
+  offset: 0, 0
+  index: -1
+pokeball4
+  rotate: true
+  xy: 537, 173
+  size: 133, 152
+  orig: 133, 152
+  offset: 0, 0
+  index: -1
+quan
+  rotate: false
+  xy: 237, 223
+  size: 298, 298
+  orig: 302, 302
+  offset: 2, 2
+  index: -1
+zhuan
+  rotate: false
+  xy: 2, 58
+  size: 233, 463
+  orig: 295, 538
+  offset: 31, 69
+  index: -1
+多边形 1
+  rotate: true
+  xy: 634, 90
+  size: 81, 80
+  orig: 92, 92
+  offset: 6, 6
+  index: -1
+多边形 1265
+  rotate: false
+  xy: 537, 308
+  size: 213, 213
+  orig: 250, 236
+  offset: 19, 12
+  index: -1
+椭圆 1
+  rotate: false
+  xy: 537, 76
+  size: 95, 95
+  orig: 111, 111
+  offset: 8, 8
+  index: -1
